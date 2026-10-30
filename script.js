@@ -198,6 +198,15 @@ document.addEventListener('DOMContentLoaded', function () {
       const selectedRadio = document.querySelector('input[name="triage-case"]:checked');
       if (!selectedRadio || selectedRadio.value === 'no_penal') return;
 
+      // Meta Pixel Event: Contact / Llamada Telefónica
+      if (typeof window.fbq === 'function') {
+        window.fbq('track', 'Contact', {
+          area: 'penal',
+          canal: 'llamada_telefonica',
+          motivo: selectedRadio.value
+        });
+      }
+
       // Disparar llamada al número oficial
       window.location.href = `tel:${PHONE_NUMBER}`;
       closeCallModal();
@@ -213,8 +222,10 @@ document.addEventListener('DOMContentLoaded', function () {
       e.preventDefault();
       const selectedRadio = document.querySelector('input[name="triage-case"]:checked');
       let msg = 'Hola Dra. Elizabeth Rojas, necesito evaluar mi caso de penal con un especialista.';
+      let motivo = 'general';
       
       if (selectedRadio) {
+        motivo = selectedRadio.value;
         if (selectedRadio.value === 'detencion') {
           msg = 'URGENCIA PENAL: Hola Dra. Elizabeth Rojas, tengo un familiar/persona detenida en comisaría/juzgado y necesito asistencia legal inmediata.';
         } else if (selectedRadio.value === 'investigacion') {
@@ -222,6 +233,15 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (selectedRadio.value === 'juicio_apelacion') {
           msg = 'Hola Dra. Elizabeth Rojas, requiero asesoría técnica para un proceso en etapa de juicio oral o apelación de sentencia penal.';
         }
+      }
+
+      // Meta Pixel Event: Lead / WhatsApp Modal
+      if (typeof window.fbq === 'function') {
+        window.fbq('track', 'Lead', {
+          area: 'penal',
+          canal: 'whatsapp_modal',
+          motivo: motivo
+        });
       }
 
       const waUrl = `https://api.whatsapp.com/send?phone=${WA_CLEAN_PHONE}&text=${encodeURIComponent(msg)}`;
@@ -321,6 +341,16 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       if (!valid) return;
+
+      // Meta Pixel Event: Lead / Formulario Web
+      if (typeof window.fbq === 'function') {
+        window.fbq('track', 'Lead', {
+          area: 'penal',
+          canal: 'formulario_web_whatsapp',
+          ciudad: ciudad,
+          delito_materia: servicio
+        });
+      }
 
       let waText = `*CONSULTA PENAL - C&C ASESORÍA LEGAL ESPECIALIZADA*\n`;
       waText += `*Nombre:* ${nombre}\n`;
@@ -507,4 +537,27 @@ document.addEventListener('DOMContentLoaded', function () {
   // Inicializar selectores personalizados (Regiones y Situación Penal)
   setupCustomSelect('form-ciudad');
   setupCustomSelect('form-servicio');
+
+  // 6. Rastreo de Enlaces Directos a WhatsApp (Hero, Flotante, etc.)
+  document.addEventListener('click', function (e) {
+    const waLink = e.target.closest('a[href*="whatsapp.com"], a[href*="wa.me"]');
+    if (!waLink) return;
+
+    // Si es el botón fallback del modal, ya tiene su propio handler específico
+    if (waLink.id === 'btn-modal-wa-fallback') return;
+
+    let canal = 'whatsapp_enlace_general';
+    if (waLink.id === 'hero-wa-btn' || waLink.closest('#hero-wa-btn')) {
+      canal = 'whatsapp_hero';
+    } else if (waLink.classList.contains('sticky-wa-small-btn') || waLink.closest('.sticky-wa-small-btn')) {
+      canal = 'whatsapp_flotante';
+    }
+
+    if (typeof window.fbq === 'function') {
+      window.fbq('track', 'Lead', {
+        area: 'penal',
+        canal: canal
+      });
+    }
+  });
 });
