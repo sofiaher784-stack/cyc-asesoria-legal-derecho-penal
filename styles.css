@@ -2223,15 +2223,18 @@ a {
 .btn-modal-wa {
   background: var(--wa-green);
   color: var(--text-white);
-  padding: 0.55rem 0.85rem;
-  font-size: 0.8rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.88rem;
   font-weight: 700;
   border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   transition: var(--transition);
+  text-decoration: none;
+  cursor: pointer;
+  width: 100%;
 }
 
 .btn-modal-wa.wa-priority-active {
@@ -2243,6 +2246,8 @@ a {
 
 .btn-modal-wa:hover {
   background: var(--wa-hover);
+  color: var(--text-white);
+  text-decoration: none;
 }
 
 /* ==========================================================================

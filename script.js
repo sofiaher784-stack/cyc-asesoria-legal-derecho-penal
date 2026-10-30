@@ -83,6 +83,34 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // 2. Control del Modal de Calificación Pre-Llamada (Filtro Anti-Curiosos)
+  function getModalWhatsAppUrl() {
+    const selectedRadio = document.querySelector('input[name="triage-case"]:checked');
+    let msg = 'Hola Dra. Elizabeth Rojas, necesito evaluar mi caso de penal con un especialista.';
+    let motivo = 'general';
+
+    if (selectedRadio) {
+      motivo = selectedRadio.value;
+      if (selectedRadio.value === 'detencion') {
+        msg = 'URGENCIA PENAL: Hola Dra. Elizabeth Rojas, tengo un familiar/persona detenida en comisaría/juzgado y necesito asistencia legal inmediata.';
+      } else if (selectedRadio.value === 'investigacion') {
+        msg = 'Hola Dra. Elizabeth Rojas, tengo una investigación preliminar/citación fiscal activa y deseo coordinar una cita para evaluar mi defensa.';
+      } else if (selectedRadio.value === 'juicio_apelacion') {
+        msg = 'Hola Dra. Elizabeth Rojas, requiero asesoría técnica para un proceso en etapa de juicio oral o apelación de sentencia penal.';
+      } else if (selectedRadio.value === 'no_penal') {
+        msg = 'Hola C&C Asesoría Legal, tengo una consulta de otra materia legal (familiar, civil, laboral) y deseo orientarme con el área correspondiente.';
+      }
+    }
+
+    const waUrl = `https://api.whatsapp.com/send?phone=${WA_CLEAN_PHONE}&text=${encodeURIComponent(msg)}`;
+    return { waUrl, motivo };
+  }
+
+  function updateModalWaHref() {
+    if (!modalWaFallback) return;
+    const { waUrl } = getModalWhatsAppUrl();
+    modalWaFallback.setAttribute('href', waUrl);
+  }
+
   window.openCallModal = function (originContext) {
     if (!callModal) return;
     updateScheduleUI();
@@ -95,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (radio) radio.checked = true;
     }
     evaluateCallButtonState();
+    updateModalWaHref();
   };
 
   function closeCallModal() {
@@ -181,7 +210,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (triageRadios) {
     triageRadios.forEach(function (radio) {
-      radio.addEventListener('change', evaluateCallButtonState);
+      radio.addEventListener('change', function () {
+        evaluateCallButtonState();
+        updateModalWaHref();
+      });
     });
   }
 
@@ -214,26 +246,13 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   updateScheduleUI();
+  updateModalWaHref();
   setInterval(updateScheduleUI, 60000); // Reevaluar cada minuto
 
   // Redirección a WhatsApp desde el modal
   if (modalWaFallback) {
     modalWaFallback.addEventListener('click', function (e) {
-      e.preventDefault();
-      const selectedRadio = document.querySelector('input[name="triage-case"]:checked');
-      let msg = 'Hola Dra. Elizabeth Rojas, necesito evaluar mi caso de penal con un especialista.';
-      let motivo = 'general';
-      
-      if (selectedRadio) {
-        motivo = selectedRadio.value;
-        if (selectedRadio.value === 'detencion') {
-          msg = 'URGENCIA PENAL: Hola Dra. Elizabeth Rojas, tengo un familiar/persona detenida en comisaría/juzgado y necesito asistencia legal inmediata.';
-        } else if (selectedRadio.value === 'investigacion') {
-          msg = 'Hola Dra. Elizabeth Rojas, tengo una investigación preliminar/citación fiscal activa y deseo coordinar una cita para evaluar mi defensa.';
-        } else if (selectedRadio.value === 'juicio_apelacion') {
-          msg = 'Hola Dra. Elizabeth Rojas, requiero asesoría técnica para un proceso en etapa de juicio oral o apelación de sentencia penal.';
-        }
-      }
+      const { waUrl, motivo } = getModalWhatsAppUrl();
 
       // Meta Pixel Event: Lead / WhatsApp Modal
       if (typeof window.fbq === 'function') {
@@ -244,9 +263,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
       }
 
-      const waUrl = `https://api.whatsapp.com/send?phone=${WA_CLEAN_PHONE}&text=${encodeURIComponent(msg)}`;
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
-      closeCallModal();
+      // Redirección infalible (no se bloquea por popups en Chrome ni en celulares)
+      e.preventDefault();
+      const win = window.open(waUrl, '_blank');
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        window.location.href = waUrl;
+      }
+      setTimeout(closeCallModal, 300);
     });
   }
 
@@ -363,7 +386,10 @@ document.addEventListener('DOMContentLoaded', function () {
       waText += `\n_Deseo coordinar una llamada o cita de evaluación legal con la Socia Directora._`;
 
       const sendUrl = `https://api.whatsapp.com/send?phone=${WA_CLEAN_PHONE}&text=${encodeURIComponent(waText)}`;
-      window.open(sendUrl, '_blank', 'noopener,noreferrer');
+      const formWin = window.open(sendUrl, '_blank');
+      if (!formWin || formWin.closed || typeof formWin.closed === 'undefined') {
+        window.location.href = sendUrl;
+      }
     });
   }
 
